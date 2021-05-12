@@ -1,0 +1,7 @@
+wage: 5000000
+BIDV: 278479
+momo: 0
+finhay: 2162407
+wallet: -480000
+investmentAccount: 12000000
+    
