@@ -1,9 +1,9 @@
-necessity,play,savings,education,financialFreedom
-0,0,600000,0,0
+necessity,play,savings,education,financial_freedom
+0,0,600000,100000,0
 0,0,0,-1000000,0
 0,0,0,0,0
-0,0,0,0,0
-0,0,0,0,0
+0,0,1000000,0,0
+0,0,100000,0,0
 0,0,0,0,0
 0,0,0,0,0
 0,0,0,0,0
