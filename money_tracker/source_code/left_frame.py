@@ -3,21 +3,22 @@ import tkinter as tk
 import funds
 from tkinter.ttk import *
 from tkinter import messagebox
+from right_frame import clear_not_need_zeros
 
 FILE_CSV = "C:\\Users\\Van Phu Hoa\\PycharmProjects\\money_tracker\\{}\\{}_{}.csv"
 month = {
-    "01": "Jan",
-    "02": "Feb",
-    "03": "Mar",
-    "04": "Apr",
-    "05": "May",
-    "06": "Jun",
-    "07": "Jul",
-    "08": "Aug",
-    "09": "Sep",
-    "10": "Oct",
-    "11": "Nov",
-    "12": "Dec",
+    1: "Jan",
+    2: "Feb",
+    3: "Mar",
+    4: "Apr",
+    5: "May",
+    6: "Jun",
+    7: "Jul",
+    8: "Aug",
+    9: "Sep",
+    10: "Oct",
+    11: "Nov",
+    12: "Dec",
 }
 typeList = ("necessity", "education", "financial freedom", "savings", "play")
 type_account = ("BIDV", "momo", "finhay", "wallet", "investment account")
@@ -69,7 +70,10 @@ def update_outcome_data(output, date, list_data, type_data, amount, account):
 
     # get month from dd/mm/yyyy
     try:
-        month_name = month[date[3:5]]
+        date = clear_not_need_zeros(date)
+        first_slash = date.find('/')
+        second_slash = date[first_slash + 1:].find('/') + first_slash + 1
+        month_name = month[int(date[first_slash + 1: second_slash])]
 
         # export to csv
         database = pd.read_csv(FILE_CSV.format("outcome", month_name, "outcome"))
@@ -93,6 +97,7 @@ def update_outcome_data(output, date, list_data, type_data, amount, account):
             int(date[3:5]) - 1
             ]
         necessity1, play1, savings1, education1, financial_freedom1 = month_data.loc[12]
+        output.delete('1.0', 'end')
         output.insert(
             "end",
             remind_string.format(
@@ -111,7 +116,10 @@ def update_income_data(date, list_data, account, amount):
     global database, month_name, fund_dict
 
     try:
-        month_name = month[date[3:5]]
+        date = clear_not_need_zeros(date)
+        first_slash = date.find('/')
+        second_slash = date[first_slash + 1:].find('/') + first_slash + 1
+        month_name = month[int(date[first_slash + 1: second_slash])]
 
         # export to csv
         database = pd.read_csv(FILE_CSV.format("income", month_name, "income"))
@@ -136,52 +144,52 @@ def create_left_frame(root_window, output):
     left_frame.place(relx=0.05, rely=0.05, relwidth=0.25, relheight=0.3)
 
     # data label
-    date_label = tk.Label(left_frame, text="Date", font=('', 15))
-    date_label.grid(padx=1, pady=1)
+    date_label = tk.Label(left_frame, text="Date", font=('Transformers Movie', 10, 'bold'), bg='white')
+    date_label.grid(row=0, column=0, pady=2, padx=2, sticky='nesw')
     date_entry = tk.Entry(left_frame, bg="white")
-    date_entry.grid(row=1, column=0)
+    date_entry.grid(row=0, column=1, sticky='nesw')
 
     # type label
-    type_label = tk.Label(left_frame, text="Type")
-    type_label.place(relx=0.05, rely=0.5, relwidth=0.1, relheight=0.1)
+    type_label = tk.Label(left_frame, text="Type", font=('Transformers Movie', 10, 'bold'), bg='white')
+    type_label.grid(row=1, column=0, pady=2, padx=2, sticky='nesw')
     type_entry = Combobox(left_frame, exportselection=0)
     type_entry["values"] = typeList
-    type_entry.place(relx=0.15, rely=0.5, relwidth=0.15, relheight=0.1)
+    type_entry.grid(row=1, column=1, pady=2, padx=2, sticky='nesw')
 
     # type account
-    account_label = tk.Label(left_frame, text="Account")
-    account_label.place(relx=0.4, rely=0.5, relwidth=0.1, relheight=0.1)
+    account_label = tk.Label(left_frame, text="Account", font=('Transformers Movie', 10, 'bold'), bg='white')
+    account_label.grid(row=2, column=0, pady=2, padx=2, sticky='nesw')
     account_entry = Combobox(left_frame)
     # exportselection=0)
     account_entry["values"] = type_account
-    account_entry.place(relx=0.5, rely=0.5, relwidth=0.15, relheight=0.1)
+    account_entry.grid(row=2, column=1, pady=2, padx=2, sticky='nesw')
 
     # list label
-    list_label = tk.Label(left_frame, text="List")
-    list_label.place(relx=0.05, rely=0.2, relwidth=0.1, relheight=0.075)
+    list_label = tk.Label(left_frame, text="List", font=('Transformers Movie', 10, 'bold'), bg='white')
+    list_label.grid(row=3, column=0, pady=2, padx=2, sticky='nesw')
     list_entry = tk.Entry(left_frame, bg="white")
-    list_entry.place(relx=0.15, rely=0.2, relwidth=0.15, relheight=0.075)
+    list_entry.grid(row=3, column=1, pady=2, padx=2, sticky='nesw')
 
     # amount label
-    amount_label = tk.Label(left_frame, text="Amount")
-    amount_label.place(relx=0.05, rely=0.35, relwidth=0.1, relheight=0.075)
+    amount_label = tk.Label(left_frame, text="Amount", font=('Transformers Movie', 10, 'bold'), bg='white')
+    amount_label.grid(row=4, column=0, pady=2, padx=2, sticky='nesw')
     amount_entry = tk.Entry(left_frame, bg="white")
-    amount_entry.place(relx=0.15, rely=0.35, relwidth=0.15, relheight=0.075)
+    amount_entry.grid(row=4, column=1, pady=2, padx=2, sticky='nesw')
 
     # input button
     income_button = tk.Button(
         left_frame,
-        text="Income",
+        text="Income", font=('Transformers Movie', 10, 'bold'), bg='white',
         command=lambda: update_income_data(
             date_entry.get(), list_entry.get(), account_entry.get(), amount_entry.get()
         ),
     )
-    income_button.place(relx=0.55, rely=0.05, relwidth=0.15)
+    income_button.grid(row=0, column=3, pady=2, padx=4, sticky='nesw')
 
     # outcome button
     outcome_button = tk.Button(
         left_frame,
-        text="Outcome",
+        text="Outcome", font=('Transformers Movie', 10, 'bold'), bg='white',
         command=lambda: update_outcome_data(
             output,
             date_entry.get(),
@@ -191,4 +199,4 @@ def create_left_frame(root_window, output):
             account_entry.get(),
         ),
     )
-    outcome_button.place(relx=0.55, rely=0.2, relwidth=0.15)
+    outcome_button.grid(row=1, column=3, pady=2, padx=4, sticky='nesw')

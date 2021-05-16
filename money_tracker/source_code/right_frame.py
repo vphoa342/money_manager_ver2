@@ -2,8 +2,7 @@ import pandas as pd
 import numpy as np
 import tkinter as tk
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from tkinter.ttk import *
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import messagebox
 
 FILE_CSV = "C:\\Users\\Van Phu Hoa\\PycharmProjects\\money_tracker\\{}\\{}_{}.csv"
@@ -22,62 +21,81 @@ months = [
     "Dec",
 ]
 month = {
-    "01": "Jan",
-    "02": "Feb",
-    "03": "Mar",
-    "04": "Apr",
-    "05": "May",
-    "06": "Jun",
-    "07": "Jul",
-    "08": "Aug",
-    "09": "Sep",
-    "10": "Oct",
-    "11": "Nov",
-    "12": "Dec",
+    1: "Jan",
+    2: "Feb",
+    3: "Mar",
+    4: "Apr",
+    5: "May",
+    6: "Jun",
+    7: "Jul",
+    8: "Aug",
+    9: "Sep",
+    10: "Oct",
+    11: "Nov",
+    12: "Dec",
 }
 
 
-def view_by_type(output, value_input):
+def clear_not_need_zeros(date):
+    year = date[date.rfind('/') + 1:]
+    date = date[:-4]
+    temp_string = '0{}'
+    for i in range(1, 9):
+        date = date.replace(temp_string.format(i), str(i))
+    return date + year
+
+
+def view_by_type(output, input_data):
     global database, month_name, FILE_CSV, month
 
     try:
+        # clear current output
+        output.delete('1.0', 'end')
+
         # find month_name from input
-        if len(value_input) == 10:
-            month_name = month[value_input[3:5]]
-            type_data = 0
-        else:
-            month_name = month[value_input]
+        if len(input_data) < 3:
+            month_name = month[int(input_data)]
             type_data = 1
+        else:
+            input_data = clear_not_need_zeros(input_data)
+            first_slash = input_data.find('/')
+            second_slash = input_data[first_slash + 1:].find('/') + first_slash + 1
+            month_name = month[int(input_data[first_slash + 1: second_slash])]
+            type_data = 0
 
         # print data to output
         database = pd.read_csv(FILE_CSV.format("outcome", month_name, "outcome"))
         if type_data == 0:
-            output.insert('end', database[database["Date"] == value_input].to_string())
+            output.insert('end', database[database["Date"] == input_data].to_string())
         else:
             output.insert('end', database.to_string())
     except:
         messagebox.showerror('Error', "Something else went wrong")
 
 
-def create_pie_chart(field, month_pie_chart, date_pie_chart, root_window, clear_chart_button):
+def create_pie_chart(input_data, root_window, clear_chart_button):
     global database, month_name, month, FILE_CSV
     labels_pie = ["necessity", "education", "financial freedom", "savings", "play"]
-    color_pie = ["#C7CEEA", "#FFDAC1", "white", "#FFFFD8", "#B5EAD7"]
+    color_pie = ["#C7CEEA", "#FFDAC1", "#C1E7E3", "#FFFFD8", "#B5EAD7"]
     fig = plt.figure(figsize=(4, 4), dpi=100)
     type_data = [0]
 
     try:
-        month_name = month[month_pie_chart]
-        database = pd.read_csv(FILE_CSV.format("outcome", month_name, "outcome"))
+        # get month as string from input data
+        if len(input_data) < 3:
+            month_name = month[int(input_data)]
+        else:
+            input_data = clear_not_need_zeros(input_data)
+            first_slash = input_data.find('/')
+            second_slash = input_data[first_slash + 1:].find('/') + first_slash + 1
+            month_name = month[int(input_data[first_slash + 1: second_slash])]
 
-        # create date base on date_pie_chart and month_pie_chart
-        if len(field) > 0 and field[-1] == 0:
-            date_input = date_pie_chart + "/" + month_pie_chart + "/2021"
+        database = pd.read_csv(FILE_CSV.format("outcome", month_name, "outcome"))
         for i in range(5):
-            if field[-1] == 0:
+            if len(input_data) > 3:
                 type_data.append(
                     database[
-                        (database["Type"] == labels_pie[i]) & (database["Date"] == date_input)
+                        (database["Type"] == labels_pie[i]) & (database["Date"] == input_data)
                     ]["Amount"].sum(axis=0)
                 )
             else:
@@ -88,14 +106,12 @@ def create_pie_chart(field, month_pie_chart, date_pie_chart, root_window, clear_
         plt.pie(type_data[1:6], labels=labels_pie, colors=color_pie, autopct="%.2f %%")
         canvas = FigureCanvasTkAgg(fig, master=root_window)
         canvas.draw()
-        canvas.get_tk_widget().place(relx=0.6, rely=0.4)
-        toolbar = NavigationToolbar2Tk(canvas, root_window)
-        toolbar.update()
+
         # placing the toolbar on the Tkinter window
         canvas.get_tk_widget().place(relx=0.6, rely=0.4)
+        clear_chart_button['command'] = lambda: canvas.get_tk_widget().delete('all')
     except:
         messagebox.showerror('Error', 'Something else went wrong')
-    clear_chart_button['command'] = lambda: canvas.get_tk_widget().delete('all')
 
 
 def create_bar_chart(root_window, clear_chart_button):
@@ -126,6 +142,7 @@ def create_bar_chart(root_window, clear_chart_button):
     plt.xticks(bar1, months)
     canvas = FigureCanvasTkAgg(fig, master=root_window)
     canvas.draw()
+
     # placing the toolbar on the Tkinter window
     canvas.get_tk_widget().place(relx=0.1, rely=0.4)
     clear_chart_button['command'] = lambda: canvas.get_tk_widget().delete('all')
@@ -136,62 +153,44 @@ def create_right_frame(root_window, output):
     right_frame = tk.Frame(root_window, bg="white")
     right_frame.place(relx=0.32, rely=0.05, relwidth=0.25, relheight=0.3)
 
-    # value input
-    view_listbox = Combobox(right_frame)
-    view_listbox["values"] = ("Date", "Month")
-    view_listbox.place(relx=0.05, rely=0.05, relwidth=0.2, relheight=0.075)
+    # input label
+    input_label = tk.Label(right_frame, text='Input', font=('Transformers Movie', 10, 'bold'), bg='white')
+    input_label.grid(row=0, column=0, padx=4, pady=2, sticky='news')
 
     # input entry
     view_entry = tk.Entry(right_frame)
-    view_entry.place(relx=0.3, rely=0.05, relwidth=0.2)
+    view_entry.grid(row=0, column=1, padx=4, pady=2, sticky='news')
 
     # input view button
     view_button = tk.Button(
-        right_frame, text="View", command=lambda: view_by_type(output, view_entry.get())
+        right_frame, text="View", command=lambda: view_by_type(output, view_entry.get()),
+        font=('Transformers Movie', 10, 'bold')
     )
-    view_button.place(relx=0.55, rely=0.05, relwidth=0.2, relheight=0.075)
+    view_button.grid(row=0, column=2, padx=4, pady=2, sticky='news')
 
     # date label input for plot
-    date_label = tk.Label(right_frame, text="Date")
-    date_label.place(relx=0.05, rely=0.2, relwidth=0.2, relheight=0.075)
-
-    # month label input for plot
-    month_label = tk.Label(right_frame, text="Month")
-    month_label.config(font=("Transformers Movie", 10))
-    month_label.place(relx=0.3, rely=0.2, relwidth=0.2)
-
-    # type List box input for plot
-    type_box = Combobox(right_frame)
-    type_box["values"] = ("Date", "Month")
-    type_box.place(relx=0.55, rely=0.2, relwidth=0.2, relheight=0.075)
+    chart_data_label = tk.Label(right_frame, text="Chart data", font=('Transformers Movie', 10, 'bold'), bg='white')
+    chart_data_label.grid(row=1, column=0, padx=4, pady=2, sticky='news')
 
     # Date input for plot
-    date_plot = tk.Entry(right_frame, bd=0)
-    date_plot.place(relx=0.05, rely=0.3, relwidth=0.2, relheight=0.075)
+    chart_data_entry = tk.Entry(right_frame, bd=1)
+    chart_data_entry.grid(row=1, column=1, padx=4, pady=2, sticky='news', columnspan=2)
 
-    # Month input for plot
-    month_plot = tk.Entry(right_frame)
-    month_plot.place(relx=0.3, rely=0.3, relwidth=0.2)
-
-    #clear plot button
-    clear_chart_button = tk.Button(right_frame, text='Clear chart')
-    clear_chart_button.place(relx=0.7, rely=0.7)
+    # clear plot button
+    clear_chart_button = tk.Button(right_frame, text='Clear chart', font=('Transformers Movie', 10, 'bold'))
+    clear_chart_button.grid(row=2, column=2, padx=4, pady=2, sticky='news')
 
     # plot button
     pie_chart_button = tk.Button(
-        right_frame, text="Pie Plot",
-        command=lambda: create_pie_chart(
-            type_box.get(), month_plot.get(), date_plot.get(), root_window,
-            clear_chart_button
-        ),
-
+        right_frame, text="Pie Chart",
+        command=lambda: create_pie_chart(chart_data_entry.get(), root_window, clear_chart_button),
+        font=('Transformers Movie', 10, 'bold')
     )
-    pie_chart_button.place(relx=0.55, rely=0.3, relwidth=0.2, relheight=0.075)
+    pie_chart_button.grid(row=2, column=0, padx=4, pady=2, sticky='news')
 
     # bar plot button
     bar_chart_button = tk.Button(
-        right_frame, text="Bar chart", command=lambda: create_bar_chart(root_window, clear_chart_button)
+        right_frame, text="Bar chart", command=lambda: create_bar_chart(root_window, clear_chart_button),
+        font=('Transformers Movie', 10, 'bold')
     )
-    bar_chart_button.place(relx=0.55, rely=0.4, relwidth=0.2, relheight=0.075)
-
-
+    bar_chart_button.grid(row=2, column=1, padx=4, pady=2, sticky='news')
