@@ -4,6 +4,8 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import messagebox
+from bisect import bisect_left
+import collections
 
 FILE_CSV = "C:\\Users\\Van Phu Hoa\\PycharmProjects\\money_tracker\\{}\\{}_{}.csv"
 month = {
@@ -118,12 +120,47 @@ def create_pie_chart(input_data, root_window, clear_chart_button):
         messagebox.showerror('Error', 'Something else went wrong')
 
 
+def edit_list(array):
+    # dd/mm/yyyy to dd, sort
+
+    # dd/mm/yyyy to dd
+    for i in range(len(array)):
+        date = array[i]
+        array[i] = int(date[:date.find('/')])
+
+    # sort
+    array.sort()
+    return array
+
+
+def edit_dict(date, amount):
+    # create dict
+    dict_temp = {}
+
+    # add value for dict
+    for i in range(len(date)):
+        temp = date[i]
+        if dict_temp.get(temp) == None:
+            dict_temp[temp] = amount[i]
+        else:
+            dict_temp[temp] += amount[i]
+
+    # add zeros amount date
+    for date in range(1, 32):
+        if dict_temp.get(date) == None:
+            dict_temp[date] = 0
+    return dict_temp
+
+
 def create_bar_chart(root_window, clear_chart_button, input_data):
     global month, FILE_CSV
 
     bar_data = np.zeros(shape=(2, 12))
-    index = 0
+
+    # display bar chart
+    fig = plt.figure(figsize=(12, 4), dpi=100)
     if len(input_data) <= 2:
+        index = 0
         # create bar chart to compare 12 months
         for file in range(1, 13):
             # open file
@@ -143,30 +180,47 @@ def create_bar_chart(root_window, clear_chart_button, input_data):
         bar_dataframe = pd.DataFrame(
             {"Income": bar_data[0, :], "Outcome": bar_data[1, :]}, index=month.values()
         )
+        bar1 = np.arange(len(month))
+        bar2 = [i for i in bar1]
+        plt.bar(bar1, bar_dataframe["Income"], width=-0.4, align="edge")
+        plt.bar(bar2, bar_dataframe["Outcome"], width=0.4, align="edge")
+        plt.xticks(bar1, month.values())
     else:
         try:
             month_name = get_month_name(input_data)
             outcome_file = pd.read_csv(FILE_CSV.format("outcome", month_name, "outcome"))
             income_file = pd.read_csv(FILE_CSV.format("income", month_name, "income"))
 
-            date_set = set(outcome_file['Date'])
+            # set up for outcome file
+            outcome_date_list = list(outcome_file['Date'])
+            outcome_date_list = edit_list(outcome_date_list)
+            outcome_amount_list = list(outcome_file['Amount'])
+            outcome_dict = edit_dict(outcome_date_list, outcome_amount_list)
+            outcome_dict_ordered = collections.OrderedDict(sorted(outcome_dict.items()))
+
+            # set up for income file
+            income_date_list = list(income_file['Date'])
+            income_date_list = edit_list(income_date_list)
+            income_amount_list = list(income_file['Amount'])
+            income_dict = edit_dict(income_date_list, income_amount_list)
+            income_dict_ordered = collections.OrderedDict(sorted(income_dict.items()))
+
+            # display chart
+            x = np.arange(1, 32)
+            width = 0.4
+            plt.bar(x - 0.2, outcome_dict_ordered.values(), width)
+            plt.bar(x + 0.2, income_dict_ordered.values(), width)
+            plt.xticks(x, [str(x) for x in outcome_dict_ordered.keys()])
+
         except (IOError, OSError):
             messagebox.showerror('Error', "File not found")
 
-    # display bar chart
-    fig = plt.figure(figsize=(12, 4), dpi=100)
-
     # bar_dataFrame.plot.bar()
-    bar1 = np.arange(len(month))
-    bar2 = [i for i in bar1]
-    plt.bar(bar1, bar_dataframe["Income"], width=-0.4, align="edge")
-    plt.bar(bar2, bar_dataframe["Outcome"], width=0.4, align="edge")
-    plt.xticks(bar1, month.values())
     canvas = FigureCanvasTkAgg(fig, master=root_window)
     canvas.draw()
 
     # placing the toolbar on the Tkinter window
-    canvas.get_tk_widget().place(relx=0.1, rely=0.4)
+    canvas.get_tk_widget().place(relx=0.3, rely=0.4)
     clear_chart_button['command'] = lambda: canvas.get_tk_widget().delete('all')
 
 
