@@ -56,16 +56,15 @@ investmentAccount: {}
                 funds.investment_account.total,
             )
         )
+    except (IOError, OSError):
+        messagebox.showerror('Error', 'File not found')
     finally:
         file.close()
 
 
 def update_outcome_data(output, date, list_data, type_data, amount, account):
-    remind_string = """remain necessity: {}
-    remain play: {}
-    remain savings: {}
-    remain education: {}
-    remain financial freedom: {}
+    remind_string = """remain necessity: {}\nremain play: {}\nremain savings: {}\nremain education: {}
+remain financial freedom: {}
         """
 
     # get month from dd/mm/yyyy
@@ -85,15 +84,20 @@ def update_outcome_data(output, date, list_data, type_data, amount, account):
         fund_dict[account].deduct_money(int(amount))
         save_data()
 
+        # find month id
+        month_id = None
+        for x in month:
+            if month[x] == month_name:
+                month_id = x
+                break
+
         # create 12 month objects
         month_data = pd.read_csv(FILE_MONTH_DATA)
-        month_data.loc[int(date[3:5]) - 1][type_data] += int(amount)
+        month_data.loc[int(month_id) - 1][type_data] += int(amount)
         month_data.to_csv(FILE_MONTH_DATA, index=False)
 
         # remind goal
-        necessity, play, savings, education, financial_freedom = month_data.loc[
-            int(date[3:5]) - 1
-            ]
+        necessity, play, savings, education, financial_freedom = month_data.loc[month_id-1]
         necessity1, play1, savings1, education1, financial_freedom1 = month_data.loc[12]
         output.delete('1.0', 'end')
         output.insert(
@@ -106,7 +110,7 @@ def update_outcome_data(output, date, list_data, type_data, amount, account):
                 financial_freedom1 - financial_freedom,
             ),
         )
-    except:
+    except (IOError, OSError):
         messagebox.showerror('Error', "Something else went wrong")
 
 
@@ -128,7 +132,7 @@ def update_income_data(date, list_data, account, amount):
         # update to fund
         fund_dict[account].add_money(int(amount))
         save_data()
-    except:
+    except (ValueError, IOError, OSError):
         messagebox.showerror('Error', "Something else went wrong")
 
 
@@ -141,36 +145,36 @@ def create_left_frame(root_window, output):
 
     # data label
     date_label = tk.Label(left_frame, text="Date", font=('Transformers Movie', 10, 'bold'), bg='white')
-    date_label.grid(row=0, column=0, pady=2, padx=2, sticky='nesw')
+    date_label.grid(row=0, column=0, pady=2, padx=2, sticky='news')
     date_entry = tk.Entry(left_frame, bg="white", font=('Transformers Movie', 10, 'bold'))
-    date_entry.grid(row=0, column=1, sticky='nesw')
+    date_entry.grid(row=0, column=1, padx=2, pady=2, sticky='news')
 
     # type label
     type_label = tk.Label(left_frame, text="Type", font=('Transformers Movie', 10, 'bold'), bg='white')
-    type_label.grid(row=1, column=0, pady=2, padx=2, sticky='nesw')
+    type_label.grid(row=1, column=0, pady=2, padx=2, sticky='news')
     type_entry = Combobox(left_frame, exportselection=0, font=('Transformers Movie', 10, 'bold'))
     type_entry["values"] = typeList
-    type_entry.grid(row=1, column=1, pady=2, padx=2, sticky='nesw')
+    type_entry.grid(row=1, column=1, pady=2, padx=2, sticky='news')
 
     # type account
     account_label = tk.Label(left_frame, text="Account", font=('Transformers Movie', 10, 'bold'), bg='white')
-    account_label.grid(row=2, column=0, pady=2, padx=2, sticky='nesw')
+    account_label.grid(row=2, column=0, pady=2, padx=2, sticky='news')
     account_entry = Combobox(left_frame, font=('Transformers Movie', 10, 'bold'))
-    # exportselection=0)
+    # export selection=0)
     account_entry["values"] = type_account
-    account_entry.grid(row=2, column=1, pady=2, padx=2, sticky='nesw')
+    account_entry.grid(row=2, column=1, pady=2, padx=2, sticky='news')
 
     # list label
     list_label = tk.Label(left_frame, text="List", font=('Transformers Movie', 10, 'bold'), bg='white')
-    list_label.grid(row=3, column=0, pady=2, padx=2, sticky='nesw')
+    list_label.grid(row=3, column=0, pady=2, padx=2, sticky='news')
     list_entry = tk.Entry(left_frame, bg="white", font=('Transformers Movie', 10, 'bold'))
-    list_entry.grid(row=3, column=1, pady=2, padx=2, sticky='nesw')
+    list_entry.grid(row=3, column=1, pady=2, padx=2, sticky='news')
 
     # amount label
     amount_label = tk.Label(left_frame, text="Amount", font=('Transformers Movie', 10, 'bold'), bg='white')
-    amount_label.grid(row=4, column=0, pady=2, padx=2, sticky='nesw')
+    amount_label.grid(row=4, column=0, pady=2, padx=2, sticky='news')
     amount_entry = tk.Entry(left_frame, bg="white", font=('Transformers Movie', 10, 'bold'))
-    amount_entry.grid(row=4, column=1, pady=2, padx=2, sticky='nesw')
+    amount_entry.grid(row=4, column=1, pady=2, padx=2, sticky='news')
 
     # input button
     income_button = tk.Button(
@@ -180,7 +184,7 @@ def create_left_frame(root_window, output):
             date_entry.get(), list_entry.get(), account_entry.get(), amount_entry.get()
         ),
     )
-    income_button.grid(row=0, column=3, pady=2, padx=4, sticky='nesw')
+    income_button.grid(row=0, column=3, pady=2, padx=4, sticky='news')
 
     # outcome button
     outcome_button = tk.Button(
@@ -195,4 +199,4 @@ def create_left_frame(root_window, output):
             account_entry.get(),
         ),
     )
-    outcome_button.grid(row=1, column=3, pady=2, padx=4, sticky='nesw')
+    outcome_button.grid(row=1, column=3, pady=2, padx=4, sticky='news')

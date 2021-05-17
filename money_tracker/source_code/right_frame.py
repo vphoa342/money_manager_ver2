@@ -4,7 +4,6 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import messagebox
-from bisect import bisect_left
 import collections
 
 FILE_CSV = "C:\\Users\\Van Phu Hoa\\PycharmProjects\\money_tracker\\{}\\{}_{}.csv"
@@ -75,11 +74,11 @@ def view_by_type(output, input_data):
             output.insert('end', database[database["Date"] == input_data].to_string())
         else:
             output.insert('end', database.to_string())
-    except:
+    except (IOError, OSError, KeyError, ValueError):
         messagebox.showerror('Error', "Something else went wrong")
 
 
-def create_pie_chart(input_data, root_window, clear_chart_button):
+def create_pie_chart(input_data, clear_chart_button):
     global database, month_name, month, FILE_CSV
     labels_pie = ["necessity", "education", "financial freedom", "savings", "play"]
     color_pie = ["#C7CEEA", "#FFDAC1", "#C1E7E3", "#FFFFD8", "#B5EAD7"]
@@ -88,13 +87,7 @@ def create_pie_chart(input_data, root_window, clear_chart_button):
 
     try:
         # get month as string from input data
-        if len(input_data) < 3:
-            month_name = month[int(input_data)]
-        else:
-            input_data = clear_not_need_zeros(input_data)
-            first_slash = input_data.find('/')
-            second_slash = input_data[first_slash + 1:].find('/') + first_slash + 1
-            month_name = month[int(input_data[first_slash + 1: second_slash])]
+        month_name = get_month_name(input_data)
 
         database = pd.read_csv(FILE_CSV.format("outcome", month_name, "outcome"))
         for i in range(5):
@@ -110,13 +103,17 @@ def create_pie_chart(input_data, root_window, clear_chart_button):
                 )
 
         plt.pie(type_data[1:6], labels=labels_pie, colors=color_pie, autopct="%.2f %%")
-        canvas = FigureCanvasTkAgg(fig, master=root_window)
+
+        chart_window = tk.Tk()
+        chart_window.title('Chart View')
+        chart_window.geometry('800x400')
+        canvas = FigureCanvasTkAgg(fig, master=chart_window)
         canvas.draw()
 
         # placing the toolbar on the Tkinter window
-        canvas.get_tk_widget().place(relx=0.4, rely=0.4)
+        canvas.get_tk_widget().grid(row=0, column=0)
         clear_chart_button['command'] = lambda: canvas.get_tk_widget().delete('all')
-    except:
+    except (IOError, ValueError, OSError):
         messagebox.showerror('Error', 'Something else went wrong')
 
 
@@ -140,19 +137,19 @@ def edit_dict(date, amount):
     # add value for dict
     for i in range(len(date)):
         temp = date[i]
-        if dict_temp.get(temp) == None:
+        if dict_temp.get(temp) is None:
             dict_temp[temp] = amount[i]
         else:
             dict_temp[temp] += amount[i]
 
     # add zeros amount date
     for date in range(1, 32):
-        if dict_temp.get(date) == None:
+        if dict_temp.get(date) is None:
             dict_temp[date] = 0
     return dict_temp
 
 
-def create_bar_chart(root_window, clear_chart_button, input_data):
+def create_bar_chart(clear_chart_button, input_data):
     global month, FILE_CSV
 
     bar_data = np.zeros(shape=(2, 12))
@@ -216,11 +213,14 @@ def create_bar_chart(root_window, clear_chart_button, input_data):
             messagebox.showerror('Error', "File not found")
 
     # bar_dataFrame.plot.bar()
-    canvas = FigureCanvasTkAgg(fig, master=root_window)
+    chart_window = tk.Tk()
+    chart_window.title('Chart View')
+    chart_window.geometry('1200x400')
+    canvas = FigureCanvasTkAgg(fig, master=chart_window)
     canvas.draw()
 
     # placing the toolbar on the Tkinter window
-    canvas.get_tk_widget().place(relx=0.3, rely=0.4)
+    canvas.get_tk_widget().place(relx=0, rely=0)
     clear_chart_button['command'] = lambda: canvas.get_tk_widget().delete('all')
 
 
@@ -259,7 +259,7 @@ def create_right_frame(root_window, output):
     # plot button
     pie_chart_button = tk.Button(
         right_frame, text="Pie Chart",
-        command=lambda: create_pie_chart(chart_data_entry.get(), root_window, clear_chart_button),
+        command=lambda: create_pie_chart(chart_data_entry.get(), clear_chart_button),
         font=('Transformers Movie', 10, 'bold')
     )
     pie_chart_button.grid(row=2, column=0, padx=4, pady=2, sticky='news')
@@ -267,7 +267,7 @@ def create_right_frame(root_window, output):
     # bar plot button
     bar_chart_button = tk.Button(
         right_frame, text="Bar chart",
-        command=lambda: create_bar_chart(root_window, clear_chart_button, chart_data_entry.get()),
+        command=lambda: create_bar_chart(clear_chart_button, chart_data_entry.get()),
         font=('Transformers Movie', 10, 'bold')
     )
     bar_chart_button.grid(row=2, column=1, padx=4, pady=2, sticky='news')
